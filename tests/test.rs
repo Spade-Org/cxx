@@ -395,3 +395,64 @@ fn test_unwind_safe() {
     fn require_ref_unwind_safe<T: RefUnwindSafe>() {}
     require_ref_unwind_safe::<ffi::C>();
 }
+
+#[test]
+fn test_data_enums() {
+    use ffi::{c_return_enum_improper, c_return_enum_simple, c_return_enum_with_lifetime};
+    use ffi::{c_take_enum_improper, c_take_enum_simple, c_take_enum_with_lifetime};
+    use ffi::{EnumImproper, EnumSimple, EnumWithLifeTime};
+
+    assert!(matches!(c_return_enum_simple(0), EnumSimple::AVal(false)));
+
+    assert!(matches!(
+        c_return_enum_simple(1),
+        EnumSimple::BVal(ffi::Shared { z: 123 })
+    ));
+
+    assert!(matches!(c_return_enum_simple(2), EnumSimple::CVal));
+
+    assert!(matches!(
+        c_return_enum_improper(true),
+        EnumImproper::AVal(2)
+    ));
+
+    let msg = "Some string".to_string();
+    match c_return_enum_improper(false) {
+        EnumImproper::BVal(val) => {
+            assert_eq!(val.msg, msg);
+        }
+        EnumImproper::AVal(_) => {
+            assert!(false);
+        }
+    }
+
+    let a = 0xdead;
+    match c_return_enum_with_lifetime(&a) {
+        EnumWithLifeTime::AVal(_) => assert!(false),
+        EnumWithLifeTime::BVal(&v) => {
+            assert_eq!(a, v);
+        }
+    }
+
+    assert_eq!(c_take_enum_simple(EnumSimple::AVal(false)), 0);
+    assert_eq!(c_take_enum_simple(EnumSimple::AVal(true)), 1);
+    assert_eq!(
+        c_take_enum_simple(EnumSimple::BVal(ffi::Shared { z: 100 })),
+        100
+    );
+    assert_eq!(c_take_enum_simple(EnumSimple::CVal), -1);
+
+    assert_eq!(c_take_enum_improper(EnumImproper::AVal(1)), 0);
+    assert_eq!(
+        c_take_enum_improper(EnumImproper::BVal(ffi::SharedString {
+            msg: "foo".to_string()
+        })),
+        1
+    );
+
+    let a = EnumWithLifeTime::BVal(&10);
+    assert_eq!(c_take_enum_with_lifetime(&a), 20);
+
+    let a = EnumWithLifeTime::AVal("foo");
+    assert_eq!(c_take_enum_with_lifetime(&a), 3);
+}
