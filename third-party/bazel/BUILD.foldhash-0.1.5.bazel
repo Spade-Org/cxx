@@ -6,12 +6,18 @@
 #     bazel run @@//third-party:vendor
 ###############################################################################
 
+load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
 package(default_visibility = ["//visibility:public"])
 
+cargo_toml_env_vars(
+    name = "cargo_toml_env_vars",
+    src = "Cargo.toml",
+)
+
 rust_library(
-    name = "codespan_reporting",
+    name = "foldhash",
     srcs = glob(
         include = ["**/*.rs"],
         allow_empty = True,
@@ -28,14 +34,21 @@ rust_library(
             "WORKSPACE.bazel",
         ],
     ),
+    crate_features = [
+        "default",
+        "std",
+    ],
     crate_root = "src/lib.rs",
-    edition = "2018",
+    edition = "2021",
+    rustc_env_files = [
+        ":cargo_toml_env_vars",
+    ],
     rustc_flags = [
         "--cap-lints=allow",
     ],
     tags = [
         "cargo-bazel",
-        "crate-name=codespan-reporting",
+        "crate-name=foldhash",
         "manual",
         "noclippy",
         "norustfmt",
@@ -79,9 +92,5 @@ rust_library(
         "@rules_rust//rust/platform:x86_64-unknown-uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    version = "0.11.1",
-    deps = [
-        "@vendor__termcolor-1.4.1//:termcolor",
-        "@vendor__unicode-width-0.1.14//:unicode_width",
-    ],
+    version = "0.1.5",
 )

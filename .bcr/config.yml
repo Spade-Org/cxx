@@ -1,5 +1,3 @@
 fixedReleaser:
   login: dtolnay
-  email: 1940490+dtolnay@users.noreply.github.com
-moduleRoots:
-  - "."
+  email: dtolnay@gmail.com
